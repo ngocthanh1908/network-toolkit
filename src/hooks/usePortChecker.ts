@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { addHistory } from '../utils/history';
 
 type PortResult = {
     host: string;
@@ -17,8 +18,9 @@ export function usePortChecker() {
         setResult(null);
 
         try {
+            const params = new URLSearchParams({ host, port: String(port) });
             const res = await fetch(
-                `http://localhost:3001/api/port-check?host=${host}&port=${port}`
+                `http://localhost:3001/api/port-check?${params}`
             );
             const json = await res.json() as PortResult;
 
@@ -28,6 +30,11 @@ export function usePortChecker() {
             }
 
             setResult(json);
+            addHistory({
+                type: 'Port Check',
+                input: `${host}:${port}`,
+                result: json.status.toUpperCase(),
+            });
         } catch {
             setError('Cannot connect to backend server — make sure it is running');
         } finally {

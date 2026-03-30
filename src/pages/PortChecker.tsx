@@ -23,7 +23,7 @@ export default function PortChecker() {
     function handleSubmit() {
         const h = host.trim();
         const p = parseInt(port.trim());
-        if (!h || !p) return;
+        if (!h || isNaN(p) || p < 1 || p > 65535) return;
         checkPort(h, p);
     }
 

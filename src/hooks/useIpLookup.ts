@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { addHistory } from '../utils/history';
 
 type IpInfo = {
     status: string;
@@ -34,6 +35,11 @@ export function useIpLookup() {
                 setError(json.message ?? 'Invalid IP address');
             } else {
                 setData(json);
+                addHistory({
+                    type: 'IP Lookup',
+                    input: ip,
+                    result: `${json.city}, ${json.country} — ${json.isp}`,
+                });
             }
         } catch {
             setError('Network error — please try again');

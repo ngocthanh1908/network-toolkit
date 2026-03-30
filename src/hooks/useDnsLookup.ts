@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { addHistory } from '../utils/history';
 
 type DnsRecord = {
     name: string;
@@ -39,7 +40,7 @@ export function useDnsLookup() {
         setRecords([]);
 
         try {
-            const url = `https://dns.google/resolve?name=${domain}&type=${type}`;
+            const url = `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`;
             const res = await fetch(url);
             const json = await res.json() as DnsResponse;
 
@@ -55,6 +56,11 @@ export function useDnsLookup() {
             }
 
             setRecords(answers);
+            addHistory({
+                type: 'DNS Lookup',
+                input: `${domain} (${type})`,
+                result: `${answers.length} record(s) found`,
+            });
         } catch {
             setError('Network error — please try again');
         } finally {

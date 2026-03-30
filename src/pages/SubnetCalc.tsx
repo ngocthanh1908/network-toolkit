@@ -1,24 +1,12 @@
 import { useState } from 'react';
+import { addHistory } from '../utils/history';
 import {
     Box, TextField, Button, Typography,
     Alert, Card, CardContent, Grid,
     Divider, Chip,
 } from '@mui/material';
 import { calculateSubnet } from '../utils/subnet';
-
-type SubnetInfo = {
-    ipAddress: string;
-    subnetMask: string;
-    networkAddress: string;
-    broadcastAddress: string;
-    firstHost: string;
-    lastHost: string;
-    totalHosts: number;
-    usableHosts: number;
-    cidr: number;
-    ipClass: string;
-    ipType: string;
-};
+import type { SubnetInfo } from '../utils/subnet';
 
 export default function SubnetCalc() {
     const [input, setInput] = useState('');
@@ -38,6 +26,11 @@ export default function SubnetCalc() {
             return;
         }
         setResult(info);
+        addHistory({
+            type: 'Subnet',
+            input: val,
+            result: `Network: ${info.networkAddress}, Usable hosts: ${info.usableHosts.toLocaleString()}`,
+        });
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {

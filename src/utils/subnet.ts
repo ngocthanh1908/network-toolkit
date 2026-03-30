@@ -1,4 +1,4 @@
-type SubnetInfo = {
+export type SubnetInfo = {
     ipAddress: string;
     subnetMask: string;
     networkAddress: string;
@@ -51,10 +51,10 @@ export function calculateSubnet(cidr: string): SubnetInfo | null {
     const ip = parts[0];
     const prefix = parseInt(parts[1]);
 
-    if (prefix < 0 || prefix > 32) return null;
+    if (isNaN(prefix) || prefix < 0 || prefix > 32) return null;
 
     const ipParts = ip.split('.').map(Number);
-    if (ipParts.length !== 4 || ipParts.some((p) => p < 0 || p > 255)) return null;
+    if (ipParts.length !== 4 || ipParts.some((p) => isNaN(p) || p < 0 || p > 255)) return null;
 
     const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
     const ipNum = ipToNumber(ip);

@@ -88,7 +88,7 @@ export default function DnsLookup() {
                 <TableContainer component={Paper} elevation={2}>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: 'grey.100' }}>
+                            <TableRow sx={{ bgcolor: 'action.hover' }}>
                                 <TableCell><b>Name</b></TableCell>
                                 <TableCell><b>Type</b></TableCell>
                                 <TableCell><b>TTL</b></TableCell>
