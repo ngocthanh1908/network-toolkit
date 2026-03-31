@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
     Box, Typography, Button, Table, TableBody,
     TableCell, TableContainer, TableHead,
@@ -17,11 +17,7 @@ const TYPE_COLORS = {
 } as const;
 
 export default function History() {
-    const [entries, setEntries] = useState<HistoryEntry[]>([]);
-
-    useEffect(() => {
-        setEntries(getHistory());
-    }, []);
+    const [entries, setEntries] = useState<HistoryEntry[]>(() => getHistory());
 
     function handleClear() {
         if (!confirm('Clear all history?')) return;

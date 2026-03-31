@@ -63,11 +63,11 @@ src/
 | # | Feature | Status |
 |---|---------|--------|
 | 1 | Project setup & layout shell | ✅ Done |
-| 2 | IP Lookup | Pending |
-| 3 | DNS Lookup | Pending |
-| 4 | Subnet Calculator | Pending |
-| 5 | Ping / Port Checker (backend) | Pending |
-| 6 | History & Export | Pending |
+| 2 | IP Lookup | ✅ Done |
+| 3 | DNS Lookup | ✅ Done |
+| 4 | Subnet Calculator | ✅ Done |
+| 5 | Ping / Port Checker (backend) | ✅ Done |
+| 6 | History & Export | ✅ Done |
 
 ## DO NOT
 
