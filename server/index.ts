@@ -1,12 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import net from 'net';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
 app.use(cors());
 app.use(express.json());
+
+/* Serve built frontend in production */
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
 
 app.get('/api/port-check', (req, res) => {
     const host = String(req.query.host ?? '');
@@ -42,6 +49,11 @@ app.get('/api/port-check', (req, res) => {
     });
 
     socket.connect(port, host);
+});
+
+/* SPA fallback — serve index.html for all non-API routes */
+app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {

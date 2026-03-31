@@ -1,29 +1,48 @@
-# Deployment Guide — Ubuntu VPS with Nginx
+# Deployment Guide — Ubuntu VPS + Cloudflare Tunnel
 
-## Prerequisites
-- Ubuntu 20.04+ VPS with SSH access
-- Domain pointing to VPS IP (A record)
+No open ports needed. Cloudflare Tunnel handles SSL and routing.
 
-## 1. Install Node.js 20 + Nginx
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs nginx
+```
+Browser → Cloudflare Edge (SSL) → Tunnel → VPS (no open ports)
+                                              └── Express :3001
+                                                   ├── dist/  (static frontend)
+                                                   └── /api/* (port checker)
 ```
 
-## 2. Clone & Build
+---
+
+## Part 1: VPS Setup
+
+### Step 1 — Install Node.js 20
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v   # should show v20.x
+```
+
+### Step 2 — Clone & Build
 ```bash
 cd /opt
-git clone https://github.com/YOUR_USERNAME/network-toolkit.git
+git clone https://github.com/ngocthanh1908/network-toolkit.git
 cd network-toolkit
 npm install
 npm run build
 ```
 
-## 3. Backend Service (systemd)
+### Step 3 — Test it works
+```bash
+npx tsx server/index.ts
+# Open another terminal:
+curl http://localhost:3001          # should return HTML
+curl "http://localhost:3001/api/port-check?host=google.com&port=80"  # should return JSON
+# Ctrl+C to stop
+```
+
+### Step 4 — Create systemd service
 ```bash
 cat <<'EOF' | sudo tee /etc/systemd/system/network-toolkit.service
 [Unit]
-Description=Network Toolkit Backend
+Description=Network Toolkit
 After=network.target
 
 [Service]
@@ -33,6 +52,7 @@ ExecStart=/usr/bin/npx tsx server/index.ts
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production
+Environment=PORT=3001
 
 [Install]
 WantedBy=multi-user.target
@@ -40,50 +60,66 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now network-toolkit
+sudo systemctl status network-toolkit
 ```
 
-Verify: `sudo systemctl status network-toolkit`
+---
 
-## 4. Nginx Config
-Replace `your-domain.com` with actual domain:
+## Part 2: Cloudflare Tunnel
+
+### Step 5 — Install cloudflared on VPS
 ```bash
-cat <<'EOF' | sudo tee /etc/nginx/sites-available/network-toolkit
-server {
-    listen 80;
-    server_name your-domain.com;
+curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+cloudflared --version
+```
 
-    root /opt/network-toolkit/dist;
-    index index.html;
+### Step 6 — Login to Cloudflare
+```bash
+cloudflared tunnel login
+```
+It prints a URL — open it in your browser, select your domain, authorize.
 
-    # SPA — serve index.html for all frontend routes
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+### Step 7 — Create tunnel
+```bash
+cloudflared tunnel create network-toolkit
+```
+Save the **Tunnel ID** from the output (e.g. `a1b2c3d4-...`).
 
-    # Proxy API to Express backend
-    location /api/ {
-        proxy_pass http://127.0.0.1:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
+### Step 8 — Add DNS route
+Replace `tools.yourdomain.com` with your subdomain:
+```bash
+cloudflared tunnel route dns network-toolkit tools.yourdomain.com
+```
+
+### Step 9 — Create tunnel config
+Replace `<TUNNEL_ID>` with your actual tunnel ID:
+```bash
+cat <<'EOF' | sudo tee /root/.cloudflared/config.yml
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: tools.yourdomain.com
+    service: http://localhost:3001
+  - service: http_status:404
 EOF
-
-sudo ln -s /etc/nginx/sites-available/network-toolkit /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## 5. SSL (Let's Encrypt)
+### Step 10 — Run tunnel as a service
 ```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+sudo cloudflared service install
+sudo systemctl enable --now cloudflared
+sudo systemctl status cloudflared
 ```
 
-Auto-renewal is configured by default via systemd timer.
+### Step 11 — Verify
+Open `https://tools.yourdomain.com` in your browser. Done!
 
-## 6. Updating
+---
+
+## Updating
+
 ```bash
 cd /opt/network-toolkit
 git pull
@@ -92,15 +128,13 @@ npm run build
 sudo systemctl restart network-toolkit
 ```
 
-## Architecture on VPS
-```
-Browser → Nginx (port 80/443)
-            ├── Static files (dist/)  → served directly
-            └── /api/*                → proxy to Express (port 3001)
-```
-
 ## Troubleshooting
-- `sudo systemctl status network-toolkit` — check backend logs
-- `sudo nginx -t` — validate nginx config
-- `sudo journalctl -u network-toolkit -f` — tail backend logs
-- `curl http://localhost:3001/api/port-check?host=google.com&port=80` — test backend directly
+
+| Command | Purpose |
+|---------|---------|
+| `sudo systemctl status network-toolkit` | Check app status |
+| `sudo journalctl -u network-toolkit -f` | Tail app logs |
+| `sudo systemctl status cloudflared` | Check tunnel status |
+| `sudo journalctl -u cloudflared -f` | Tail tunnel logs |
+| `curl http://localhost:3001` | Test app locally |
+| `cloudflared tunnel info network-toolkit` | Tunnel details |
