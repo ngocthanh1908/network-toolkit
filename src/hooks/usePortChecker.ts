@@ -19,8 +19,9 @@ export function usePortChecker() {
 
         try {
             const params = new URLSearchParams({ host, port: String(port) });
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
             const res = await fetch(
-                `http://localhost:3001/api/port-check?${params}`
+                `${baseUrl}/api/port-check?${params}`
             );
             const json = await res.json() as PortResult;
 

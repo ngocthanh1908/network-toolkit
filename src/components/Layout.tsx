@@ -137,7 +137,7 @@ export default function Layout() {
                             {currentPage}
                         </Typography>
                         <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
-                            <IconButton onClick={toggleColorMode} color="inherit">
+                            <IconButton onClick={toggleColorMode} sx={{ color: 'text.primary' }}>
                                 <Icon>{mode === 'dark' ? 'light_mode' : 'dark_mode'}</Icon>
                             </IconButton>
                         </Tooltip>
