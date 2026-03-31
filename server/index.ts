@@ -51,8 +51,8 @@ app.get('/api/port-check', (req, res) => {
     socket.connect(port, host);
 });
 
-/* SPA fallback — serve index.html for all non-API routes */
-app.get('*', (_req, res) => {
+/* SPA fallback — serve index.html for all non-API routes (Express 5 wildcard syntax) */
+app.get('{*path}', (_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
