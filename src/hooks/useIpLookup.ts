@@ -28,7 +28,8 @@ export function useIpLookup() {
         setData(null);
 
         try {
-            const res = await fetch(`http://ip-api.com/json/${ip}`);
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+            const res = await fetch(`${baseUrl}/api/ip-lookup?ip=${encodeURIComponent(ip)}`);
             const json = await res.json() as IpInfo;
 
             if (json.status === 'fail') {

@@ -15,6 +15,22 @@ app.use(express.json());
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
 
+/* Proxy IP lookup to avoid mixed-content (http → https) browser block */
+app.get('/api/ip-lookup', async (req, res) => {
+    const ip = String(req.query.ip ?? '').trim();
+    if (!ip) {
+        res.status(400).json({ status: 'fail', message: 'Missing ip parameter' });
+        return;
+    }
+    try {
+        const response = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}`);
+        const data = await response.json();
+        res.json(data);
+    } catch {
+        res.status(502).json({ status: 'fail', message: 'Failed to reach ip-api.com' });
+    }
+});
+
 app.get('/api/port-check', (req, res) => {
     const host = String(req.query.host ?? '');
     const port = parseInt(String(req.query.port ?? '0'));
